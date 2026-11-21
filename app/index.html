@@ -3,21 +3,33 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Cover Snap</title>
+<meta name="theme-color" content="#121317">
+<title>Nightshift — Cover Studio</title>
 <link rel="stylesheet" href="./style.css">
 </head>
 <body>
-<main class="app">
-  <section class="controls">
-    <h1>Cover Snap</h1>
-    <p>A photo and a caption, made into a square cover.</p>
-    <label>Photo <input id="photo" type="file" accept="image/*"></label>
-    <label>Caption <input id="caption" type="text" maxlength="40" value="Sunset Heist"></label>
-    <button id="export" type="button">Export PNG 1080 x 1080</button>
-    <p id="status" role="status"></p>
-  </section>
-  <canvas id="cover" width="1080" height="1080" aria-label="The cover"></canvas>
-</main>
+<div class="shell">
+  <header class="topbar"><div class="brand"><span class="brand-mark">N<span>✦</span></span><span>NIGHTSHIFT <small>STUDIO / 01</small></span></div><span class="top-note">YOUR PHOTO. ANOTHER WORLD.</span><span class="online"><i></i> OFFLINE CREATIVE TOOL</span></header>
+  <main class="workspace">
+    <aside class="sidebar">
+      <div class="intro"><div class="eyebrow">THE CREATIVE DESK / 001</div><h1>Make the<br><em>night yours.</em></h1><p>Turn your moments into a cinematic, neon-soaked cover. No account. No uploads to a server.</p></div>
+      <div class="section-title"><span>01 / YOUR STORY</span><span class="rule"></span></div>
+      <label class="field">Cover title <input id="caption" maxlength="30" value="AFTER HOURS" placeholder="Your story here"></label>
+      <label class="field">Edition line <input id="edition" maxlength="34" value="THE CITY NEVER SLEEPS" placeholder="A little context"></label>
+      <div class="section-title"><span>02 / ART DIRECTION</span><span class="rule"></span></div>
+      <div class="control-label">Composition</div><div class="segmented" id="layouts"><button type="button" data-layout="triptych" class="active">TRIPTYCH</button><button type="button" data-layout="cinema">CINEMA</button><button type="button" data-layout="columns">COLUMNS</button></div>
+      <div class="control-label">Color story</div><div class="swatches" id="palettes"><button type="button" data-palette="sundown" class="selected" title="Sundown" style="--swatch:#ff6a4e"><span>01</span></button><button type="button" data-palette="electric" title="Electric" style="--swatch:#be73d0"><span>02</span></button><button type="button" data-palette="golden" title="Golden" style="--swatch:#e2af66"><span>03</span></button></div>
+      <div class="section-title"><span>03 / THE FRAMES</span><span class="rule"></span></div>
+      <p class="hint">Add one photo to fill the whole cover, or give each frame its own scene. Your images never leave this browser.</p>
+      <div class="slots" id="slots"><button class="slot selected" data-slot="hero" type="button"><b>01</b><span>MAIN CHARACTER<small id="hero-name">SAMPLE LOADED</small></span><strong>↗</strong></button><button class="slot" data-slot="scene" type="button"><b>02</b><span>THE CITY<small id="scene-name">SAMPLE LOADED</small></span><strong>↗</strong></button><button class="slot" data-slot="detail" type="button"><b>03</b><span>THE MOMENT<small id="detail-name">SAMPLE LOADED</small></span><strong>↗</strong></button></div>
+      <label class="upload" for="photo">＋ &nbsp; REPLACE SELECTED FRAME <input id="photo" type="file" accept="image/png,image/jpeg,image/webp"></label>
+      <div class="sliders"><label>Zoom <input id="zoom" type="range" min="100" max="240" value="100"><output id="zoom-value">100%</output></label><label>Horizontal <input id="panx" type="range" min="-100" max="100" value="0"><output id="panx-value">0</output></label><label>Vertical <input id="pany" type="range" min="-100" max="100" value="0"><output id="pany-value">0</output></label></div>
+      <p class="hint drag-hint">TIP: Drag directly on the cover to reframe the selected photo.</p>
+    </aside>
+    <section class="stage"><div class="stage-head"><div><span class="eyebrow">LIVE CANVAS / THE FINAL LOOK</span><h2>Your cover, your rules.</h2></div><div class="stage-counter">01 <span>/</span> 03 &nbsp; ARTBOARD</div></div><div class="preview-area"><div class="canvas-wrap"><canvas id="cover" width="1080" height="1080" aria-label="Live preview of the cover art"></canvas></div></div><div class="stage-foot"><span>✦ &nbsp; DRAG TO REFRAME &nbsp;·&nbsp; MADE ENTIRELY IN YOUR BROWSER</span><span id="dimensions">1080 × 1080 PX</span></div></section>
+    <aside class="export-panel"><div class="export-top"><span class="eyebrow">04 / TAKE IT WITH YOU</span><h2>Ready for<br><em>the spotlight?</em></h2><p>Choose a canvas. The exported PNG is exactly what you see here, rendered at full resolution.</p></div><div class="sizes" id="sizes"><button type="button" class="size active" data-size="square"><span><b>SQUARE POST</b><small>Profile & feed</small></span><span>1080 × 1080</span></button><button type="button" class="size" data-size="portrait"><span><b>PORTRAIT POST</b><small>More room to shine</small></span><span>1080 × 1350</span></button><button type="button" class="size" data-size="wide"><span><b>WIDE COVER</b><small>Desktop & video</small></span><span>1920 × 1080</span></button></div><button id="export" class="export-button" type="button">EXPORT YOUR COVER <span>↗</span></button><p id="status" role="status">PNG · FULL RESOLUTION · NO WATERMARK</p><div class="export-bottom"><span>✳</span><p>Every story deserves<br>a great opening frame.</p></div></aside>
+  </main><footer class="footer"><span>NIGHTSHIFT STUDIO © 2026</span><span>ORIGINAL ART DIRECTION / BUILT FOR YOUR STORIES</span><span>NO CLOUD. NO TRACKING. JUST ART.</span></footer>
+</div>
 <script type="module" src="./src/main.js"></script>
 </body>
 </html>
