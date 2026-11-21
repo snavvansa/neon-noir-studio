@@ -1,8 +1,8 @@
 // Original editorial cover renderer. Every shape, panel, grade and letter is drawn locally to the export canvas.
 const STORIES = {
-  sundown: { ink: '#172334', coral: '#ff735b', glow: '#ffbd81', cream: '#fff0d9', dusk: '#543d68', wash: 'rgba(255,89,72,.24)' },
-  electric: { ink: '#192133', coral: '#e78dd9', glow: '#8be6ec', cream: '#f6edfa', dusk: '#333d87', wash: 'rgba(138,74,207,.28)' },
-  golden: { ink: '#222c34', coral: '#e9ae66', glow: '#f8d7a0', cream: '#fff3dc', dusk: '#647888', wash: 'rgba(192,108,44,.24)' },
+  sundown: { ink: '#142338', coral: '#ff654f', glow: '#ffb975', cyan: '#64e8e5', cream: '#fff2dc', dusk: '#63336d', wash: 'rgba(255,74,62,.16)' },
+  electric: { ink: '#151e41', coral: '#ff69c8', glow: '#c88bff', cyan: '#79f0ec', cream: '#f9e9ff', dusk: '#522d91', wash: 'rgba(165,57,216,.18)' },
+  golden: { ink: '#203044', coral: '#f6a14b', glow: '#ffe08d', cyan: '#8ae9dc', cream: '#fff3dc', dusk: '#59758f', wash: 'rgba(219,113,43,.17)' },
 };
 
 function rect(ctx, x, y, w, h, color) { ctx.fillStyle = color; ctx.fillRect(x, y, w, h); }
@@ -20,7 +20,9 @@ function photoInFrame(ctx, frame, image, placement, tint, center = 0.5, vertical
     const scale = Math.max(w / sw, h / sh) * placement.zoom;
     const iw = sw * scale, ih = sh * scale;
     const spareX = Math.max(0, iw - w), spareY = Math.max(0, ih - h);
+    ctx.filter = 'saturate(1.28) contrast(1.12)';
     ctx.drawImage(image, x - spareX * (center + placement.x / 200), y - spareY * (vertical + placement.y / 200), iw, ih);
+    ctx.filter = 'none';
   }
   const grade = ctx.createLinearGradient(x, y, x + w * .25, y + h);
   grade.addColorStop(0, 'rgba(29,30,58,.08)'); grade.addColorStop(.55, tint); grade.addColorStop(1, 'rgba(20,17,43,.66)');
@@ -38,27 +40,101 @@ function lightLeaks(ctx, w, h, colors) {
   }
   ctx.restore();
 }
+// Vector-only sunset, light trails and palm silhouettes: no borrowed logos, fonts or artwork.
+function illustratedNightscape(ctx, w, h, frames, c) {
+  ctx.save();
+  const sunX = frames.hero.x + frames.hero.w * .15, sunY = h * .54, r = Math.min(h * .11, frames.hero.w * .17);
+  const halo = ctx.createRadialGradient(sunX, sunY, r * .28, sunX, sunY, r * 1.9);
+  halo.addColorStop(0, 'rgba(255,198,108,.28)'); halo.addColorStop(1, 'rgba(255,198,108,0)');
+  rect(ctx, sunX - 2 * r, sunY - 2 * r, 4 * r, 4 * r, halo);
+  ctx.strokeStyle = c.glow; ctx.lineWidth = 3; ctx.globalAlpha = .8;
+  for (const radius of [r * .76, r, r * 1.18]) {
+    ctx.beginPath(); ctx.arc(sunX, sunY, radius, Math.PI * 1.05, Math.PI * 1.95); ctx.stroke();
+  }
+  for (let i = 0; i < 5; i++) rect(ctx, sunX - r * (1 - i * .16), sunY + i * 12, 2 * r * (1 - i * .16), 3, c.glow);
+  ctx.globalAlpha = .95;
+  const base = h * .772, step = Math.max(12, w * .022);
+  for (let i = 0, x = 0; x < w; i++, x += step) {
+    const height = 36 + ((i * 73 + 37) % 95);
+    const building = step * (.78 + (i % 3) * .05);
+    rect(ctx, x, base - height, building, height, c.ink);
+    if (i % 4 === 1) { ctx.fillStyle = c.cyan; ctx.fillRect(x + building * .28, base - height - 9, 2, 9); }
+    ctx.globalAlpha = .35;
+    for (let floor = 0; floor < 3; floor++) {
+      if ((i + floor) % 3 === 0) rect(ctx, x + building * .18, base - height + 11 + floor * 20, 3, 5, c.glow);
+    }
+    ctx.globalAlpha = .95;
+  }
+  // Two small palms frame the artificial skyline; never cover the portrait's eyes.
+  for (const [px, py, scale] of [[w * .04, h * .69, 1], [w * .96, h * .67, .75]]) {
+    ctx.save(); ctx.translate(px, py); ctx.scale(scale, scale);
+    ctx.strokeStyle = c.ink; ctx.lineWidth = 11; ctx.beginPath(); ctx.moveTo(0, h * .1); ctx.quadraticCurveTo(12, 8, 0, -54); ctx.stroke();
+    ctx.lineWidth = 6;
+    for (const sign of [-1, 1]) for (let i = 0; i < 4; i++) {
+      ctx.beginPath(); ctx.moveTo(0, -52); ctx.quadraticCurveTo(sign * (35 + i * 18), -99 - i * 8, sign * (70 + i * 10), -44 + i * 16); ctx.stroke();
+    }
+    ctx.restore();
+  }
+  ctx.globalAlpha = .8; ctx.strokeStyle = c.cyan; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(0, h * .79); ctx.bezierCurveTo(w * .3, h * .76, w * .48, h * .805, w, h * .77); ctx.stroke();
+  ctx.restore();
+}
+function frameAnnotations(ctx, frames, w, h, c) {
+  ctx.save(); ctx.textAlign = 'left'; ctx.font = `800 ${Math.min(17, w * .017)}px Arial, sans-serif`; ctx.textBaseline = 'middle';
+  const labels = { hero: '01  /  THE LEAD', scene: '02  /  THE HORIZON', detail: '03  /  THE AFTERIMAGE' };
+  for (const [key, frame] of Object.entries(frames)) {
+    const x = frame.x + 12, y = frame.y + 13;
+    const label = labels[key], badge = Math.min(frame.w - 22, ctx.measureText(label).width + 27);
+    rect(ctx, x, y, badge, 30, 'rgba(16,30,45,.82)');
+    rect(ctx, x, y, 3, 30, c.cyan);
+    ctx.fillStyle = c.cream; ctx.fillText(label, x + 11, y + 15, badge - 15);
+  }
+  rect(ctx, w * .61, h * .754, w * .35, 2, c.cyan);
+  ctx.restore();
+}
+function microtextStrip(ctx, w, h, c) {
+  ctx.save();
+  rect(ctx, 0, h * .973, w, h * .027, c.ink);
+  rect(ctx, w * .05, h * .974, w * .9, 1, c.cyan);
+  ctx.fillStyle = c.cyan; ctx.font = `700 ${Math.min(13, w * .012)}px Arial, sans-serif`;
+  ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+  ctx.fillText('NIGHTSHIFT   /   STREETLIGHTS & STORIES   /   001', w * .065, h * .988, w * .72);
+  ctx.textAlign = 'right'; ctx.fillStyle = c.glow; ctx.fillText('MADE FOR THE NIGHT  ✦', w * .94, h * .988);
+  ctx.restore();
+}
 function titleBlock(ctx, caption, edition, w, h, c) {
   const title = (caption.trim() || 'AFTER HOURS').toUpperCase();
   const words = title.split(/\s+/);
   let lines = [title];
-  ctx.font = `900 ${Math.min(166, w * .135)}px Arial Black, Impact, sans-serif`;
-  if (words.length > 1 && ctx.measureText(title).width > w * .68) {
+  ctx.font = `900 ${Math.min(230, w * .17)}px Arial Black, Impact, sans-serif`;
+  if (w <= h * 1.25 && words.length > 1 && ctx.measureText(title).width > w * .76) {
     const mid = Math.ceil(words.length / 2); lines = [words.slice(0, mid).join(' '), words.slice(mid).join(' ')];
   }
   // Two-line title is intentionally stacked like a print cover, not a logo or a game wordmark.
-  const maxWidth = w * .88;
-  let size = Math.min(166, w * .135, h * (lines.length === 1 ? .17 : .135));
+  const maxWidth = w * .87;
+  let size = Math.min(230, w * .17, h * (lines.length === 1 ? .2 : .15));
   for (const line of lines) size = Math.min(size, fitText(ctx, line, maxWidth, size));
   ctx.save(); ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic'; ctx.lineJoin = 'round';
   ctx.font = `900 ${size}px Arial Black, Impact, sans-serif`;
   const left = w * .065, bottom = h * .875;
   lines.forEach((line, i) => {
     const yy = bottom - (lines.length - 1 - i) * size * .91;
-    ctx.shadowColor = 'rgba(11,12,33,.72)'; ctx.shadowBlur = 28;
-    ctx.lineWidth = Math.max(7, size * .085); ctx.strokeStyle = c.ink; ctx.strokeText(line, left, yy, maxWidth);
-    ctx.shadowBlur = 0; ctx.fillStyle = c.cream; ctx.fillText(line, left, yy, maxWidth);
-    ctx.lineWidth = 2; ctx.strokeStyle = c.coral; ctx.strokeText(line, left, yy, maxWidth);
+    ctx.save();
+    // A cyan-to-ink physical extrusion, a thin neon rim, then molten-metal letter faces.
+    for (let depth = 12; depth >= 1; depth--) {
+      ctx.fillStyle = depth > 7 ? c.ink : c.cyan;
+      ctx.globalAlpha = depth > 7 ? .95 : .76;
+      ctx.fillText(line, left + depth * 2, yy + depth * 2, maxWidth);
+    }
+    ctx.globalAlpha = 1;
+    ctx.shadowColor = c.coral; ctx.shadowBlur = size * .17;
+    ctx.lineWidth = Math.max(6, size * .06); ctx.strokeStyle = c.ink; ctx.strokeText(line, left, yy, maxWidth);
+    ctx.shadowBlur = 0;
+    const metal = ctx.createLinearGradient(0, yy - size, 0, yy + 12);
+    metal.addColorStop(0, c.cream); metal.addColorStop(.27, c.glow); metal.addColorStop(.58, c.coral); metal.addColorStop(1, '#c8467d');
+    ctx.fillStyle = metal; ctx.fillText(line, left, yy, maxWidth);
+    ctx.lineWidth = Math.max(1.5, size * .012); ctx.strokeStyle = c.cream; ctx.strokeText(line, left, yy - 2, maxWidth);
+    ctx.restore();
   });
   ctx.restore();
   rect(ctx, w * .067, h * .91, Math.min(w * .15, 150), 4, c.coral);
@@ -69,7 +145,7 @@ function titleBlock(ctx, caption, edition, w, h, c) {
   ctx.fillText('N / 001', w * .94, h * .944);
 }
 function coverFrames(w, h, layout) {
-  const gutter = Math.max(9, w * .011), top = h * .065, end = h * .745;
+  const gutter = Math.max(9, w * .011), top = h * .065, end = h * .805;
   if (layout === 'cinema') return {
     hero: { x: gutter, y: top, w: w * .75 - gutter * 2, h: end - top },
     scene: { x: w * .75, y: top, w: w * .25 - gutter, h: (end - top) * .56 - gutter / 2 },
@@ -106,7 +182,9 @@ export function drawCover(canvas, state) {
     photoInFrame(ctx, frames[key], image, state.positions[key], c.wash, key === 'hero' ? .48 : .5, topBias);
   }
   lightLeaks(ctx, w, h, c);
-  // The small numerals, angled ticket and hairlines are our editorial frame language.
+  illustratedNightscape(ctx, w, h, frames, c);
+  frameAnnotations(ctx, frames, w, h, c);
+  // A compact original masthead keeps the poster readable at thumbnail scale.
   ctx.save(); ctx.fillStyle = c.cream; ctx.textAlign = 'left'; ctx.font = `800 ${Math.min(21, w * .018)}px Arial, sans-serif`;
   ctx.textBaseline = 'middle'; ctx.fillText('NIGHTSHIFT     /     A CITY STORY', w * .065, h * .035);
   ctx.textAlign = 'right'; ctx.fillText('VOL. 01    •    AFTER DARK', w * .94, h * .035);
@@ -116,8 +194,9 @@ export function drawCover(canvas, state) {
   ctx.fillStyle = c.ink; ctx.font = '800 17px Arial, sans-serif'; ctx.textAlign = 'center'; ctx.fillText('EST. AFTER DARK', 70, 3);
   ctx.restore();
   const fade = ctx.createLinearGradient(0, h * .58, 0, h);
-  fade.addColorStop(0, 'rgba(18,20,39,0)'); fade.addColorStop(.47, 'rgba(18,20,39,.78)'); fade.addColorStop(1, 'rgba(18,20,39,.94)');
+  fade.addColorStop(0, 'rgba(18,20,39,0)'); fade.addColorStop(.47, 'rgba(18,20,39,.53)'); fade.addColorStop(1, 'rgba(18,20,39,.94)');
   rect(ctx, 0, h * .58, w, h * .42, fade);
   titleBlock(ctx, state.caption, state.edition, w, h, c);
+  microtextStrip(ctx, w, h, c);
   ctx.setTransform(1, 0, 0, 1, 0, 0);
 }
